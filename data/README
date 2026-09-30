@@ -1,0 +1,5 @@
+source communes:
+    https://github.com/gregoiredavid/france-geojson/tree/master/regions/auvergne-rhone-alpes
+    https://raw.githubusercontent.com/gregoiredavid/france-geojson/refs/heads/master/departements/63-puy-de-dome/communes-63-puy-de-dome.geojson
+source données population INSEE:
+    https://static.villedereve.fr/donnees/2025/communes_france_avec_polygon_2025.json
