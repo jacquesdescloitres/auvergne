@@ -1,0 +1,11 @@
+2026/09/30
+Re-used code from Tenerife project
+Added cities overlay
+added AwesomeMarkers and custom icon
+Initial commit (fully functional)
+
+2026/10/01
+added responsive attribution
+label style now handled by css
+title now embedded in map for full screen mode
+added layer-dependent title style

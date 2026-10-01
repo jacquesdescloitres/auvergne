@@ -7,7 +7,8 @@ const vtf = [ 45.623, 2.695 ];      //  VTF Domaine des Puys
 
 $(document).ready(function() {
 
-// Initialize the map
+        const instructions = $("#instructions").html();
+        // Initialize the map
         const mapOptions = {
             zoomControl: false,
             fullscreenControl: true,
@@ -18,6 +19,30 @@ $(document).ready(function() {
             }
         }
         const map = L.map('map', mapOptions).setView(initMapCenter, initZoom);
+        if (L.Control.Attribution.prototype._addTo) {       // compact attribution mode is available (dummy function L.Control.Attribution.prototype._addTo() defined in leaflet-responsive-attribution.js)
+            // Make multiline attribution
+            $(".leaflet-control-attribution").on('DOMSubtreeModified', function(){
+                var regex = /\s*[|,]\s*/g;
+                if ($(".leaflet-control-attribution").html().match(regex)) {
+                    var newAttribution = $(".leaflet-control-attribution").html().replace(regex, "<br>");
+                    $(".leaflet-control-attribution").html(newAttribution);
+                }
+            });
+            // hide attribution when leaving button (rather than forcing clicking to toggle off)
+            $(".leaflet-compact-attribution-label").on("mouseout", function () {
+                $(".leaflet-compact-attribution-toggle").attr("checked", false);
+            });
+            // force using compact attribution mode (rather than default map-width-based mode)
+            $(".leaflet-control-attribution").addClass("leaflet-compact-attribution");
+            map.on('resize', function () {
+                $(".leaflet-control-attribution").addClass("leaflet-compact-attribution");
+            });
+            // for future use
+            map.attributionControl.options._responsive = true;
+            map.attributionControl.options._maxWidth = 0;
+            map.attributionControl.options._multiline = true;
+        }
+        map.attributionControl.setPrefix(instructions + '<br>Powered by <a href="https://leafletjs.com" target="_blank">Leaflet</a> &#128077;')  // redefine default leaflet credit
 
         // add zoom bar
         const zoomOptions = {
@@ -33,30 +58,21 @@ $(document).ready(function() {
         if (! mapOptions.zoomcontrol  ||  ! mapOptions.zoomcontrol.lasso)
             $(".leaflet-control-zoom-to-area").hide();
 
-        // add markers
-var LeafIcon = L.Icon.extend({
-    options: {
-        shadowUrl: 'https://leafletjs.com/examples/custom-icons/leaf-shadow.png',
-        iconSize:     [38, 95],
-        shadowSize:   [50, 64],
-        iconAnchor:   [22, 94],
-        shadowAnchor: [4, 62],
-        popupAnchor:  [-3, -76]
-    }
-});
-var greenIcon = new LeafIcon({iconUrl: 'https://leafletjs.com/examples/custom-icons/leaf-green.png'});
-//L.marker(vtf).addTo(map).bindPopup("VTF Domaine des Puys");
-const marker = L.marker(vtf, {icon: L.AwesomeMarkers.icon({icon: 'bed', prefix: 'fa', markerColor: 'red', iconColor: '#ffffff'})});
-marker.addTo(map);
-marker.bindTooltip("VTF Domaine des Puys", {permanent: false, direction: "bottom", offset: [0,0]});
-        marker.on('mouseover', function (e) {
-            this.openPopup();
+        // add marker
+        const marker = L.marker(vtf, {
+            icon: L.AwesomeMarkers.icon({
+                icon: 'bed',
+                prefix: 'fa',
+                markerColor: 'red',
+                iconColor: '#ffffff'
+            })
         });
-        marker.on('mouseout', function (e) {
-            this.closePopup();
+        marker.addTo(map);
+        marker.bindTooltip("VTF Domaine des Puys", {
+            permanent: false,
+            direction: "bottom",
+            offset: [0,0]
         });
-
-
 
 
         // Add OpenStreetMap tiles
@@ -125,7 +141,7 @@ const communes = L.geoJSON(null, {
 
       // Create a custom div icon for the label
       const label = L.divIcon({
-        className: 'commune-label',
+        className: 'commune-label black-label',
         html: feature.properties.nom,
         iconSize: [50, 20],
         iconAnchor: [25, 0]
@@ -146,9 +162,11 @@ const communes = L.geoJSON(null, {
 
 // Load GeoJSON data from a URL
 fetch('./data/communes-63-puy-de-dome-with-population.geojson')
-  .then(response => response.json())
-  .then(data => {
-  communes.addData(data);
+    .then(response => response.json())
+    .then(data => {
+    // fix name for La Bourboule (Bourboule in original file)
+    data.features.find(o => o.properties.code === '63047').properties.nom = "La Bourboule";     // 63047 = La Bourboule
+    communes.addData(data);
     // Initialize label color
     updateLabelStyle();
     updateLabelVisibility();
@@ -177,23 +195,17 @@ fetch('./data/communes-63-puy-de-dome-with-population.geojson')
 
 // Function to update tooltip text color using jQuery
 function updateLabelStyle() {
-  const currentBaseLayer = map._layers[Object.keys(map._layers).find(key => map._layers[key] instanceof L.TileLayer && map._layers[key]._container)];
-  let textColor;
-  let textShadow;
-
-  if (map.hasLayer(osm)) {
-    textColor = '#000d'; // Black text
-    textShadow = 'none';
-  } else {
-    textColor = '#fffd'; // White text
-    textShadow = 'none';
-  }
-
-  // Update CSS using jQuery
-  $('.commune-label').css({
-    'color': textColor,
-    'text-shadow': textShadow
-  });
+    if (map.hasLayer(osm)) {
+        $('.commune-label').addClass("black-label");
+        $('.commune-label').removeClass("white-label");
+        $('.map-title').addClass("black-title");
+        $('.map-title').removeClass("white-title");
+    } else {
+        $('.commune-label').removeClass("black-label");
+        $('.commune-label').addClass("white-label");
+        $('.map-title').removeClass("black-title");
+        $('.map-title').addClass("white-title");
+    }
 }
 
 function isLabelVisible(layer) {
@@ -238,10 +250,10 @@ console.log(zoomLevel, minPopulation);
 // Listen for basemap changes and zoom changes
 map.on('baselayerchange overlayadd zoomend', function(e) {
 console.log(e.type);
-  updateLabelStyle();
   updateLabelVisibility();
+  updateLabelStyle();   // must come after updateLabelVisibility() that creates labels
   if (e.type === 'baselayerchange') {       // new base layer has just been selected
-    // enanle cities by default when selecting satellite layer
+    // enable cities by default when selecting satellite layer
     // disable cities by default when selecting osm layer
     if (this.hasLayer(satellite)  &&  ! this.hasLayer(communes)) {      // selection is satellite layer and vities were visible
       map.addLayer(communes);     // remove cities from map
