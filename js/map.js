@@ -268,6 +268,7 @@ console.log(e.type);
 
         // List of GPX tracks to display
 const files = [
+    "./gps/20260920 - La Stele.gpx",
     "./gps/20260921-095637 - Puy de Dome.gpx",
     "./gps/20260923-100730 - Mont Dore.gpx",
     "./gps/20260924-095637 - Puy de Sancy.gpx",
