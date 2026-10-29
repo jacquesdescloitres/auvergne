@@ -12,3 +12,8 @@ added layer-dependent title style
 
 2026/10/04
 added La Stele GPX track
+
+2026/10/29
+created css/leaflet.awesome-markers
+copied L.Control.ZoomBar.css/L.Control.ZoomBar.js and leaflet-responsive-attribution.js from sargalert server
+
